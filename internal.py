@@ -155,9 +155,9 @@ def get_yw_zone_color(today=None):
     first_monday = june_first + datetime.timedelta(days=(0 - june_first.weekday() + 7) % 7)
     weeks_since = (today - first_monday).days // 7
     if weeks_since % 2 == 0:
-        return "140", "Blue Zone"
+        return "140"
     else:
-        return "141", "Yellow Zone"
+        return "141"
 
 def dashboard():
     header()
