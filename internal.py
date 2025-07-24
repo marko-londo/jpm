@@ -161,8 +161,8 @@ def dashboard():
     header()
     # 1. Operating zone
     zone_day = get_today_operating_zone(address_df)
-    st.markdown(f"### Zone: {zone_day}")
-    
+    st.markdown(f"### Zone: <span style='color:#FF8C8C;'>{zone_day}</span>", unsafe_allow_html=True)
+
     # 2. YW (Yardwaste) zone color this week
     yw_route = get_yw_zone_color()
     color_code = "#3980ec" if yw_route == "140" else "#EAC100"
