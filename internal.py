@@ -15,7 +15,7 @@ import pandas as pd
 import time
 
 jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
-sidebar_logo = 
+sidebar_logo = "https://github.com/marko-londo/jpm/blob/main/logo_elephant.png?raw=true"
 
 credentials_json = st.secrets["auth_users"]["usernames"]
 
@@ -55,7 +55,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
     )
 
-st.logo(image=coa_logo)
+st.logo(image=sidebar_logo)
 
 def safe_gspread_call(callable_fn, *args, error_message="A Google Sheets error occurred. Please try again.", **kwargs):
     import gspread
