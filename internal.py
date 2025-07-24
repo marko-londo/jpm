@@ -269,12 +269,14 @@ def get_month_records():
     return filtered
 
 def decode_service_from_route(route):
-    """Decodes the service type from the route number as a string."""
-    route = str(route)
-    if len(route) < 3:
-        return "MSW"  # Default/fallback
+    """
+    Determines service type (MSW, SS, YW) based on 4-digit route number.
+    """
+    route = str(route).zfill(4)
+    # Second digit
     if route[1] == "3":
         return "SS"
+    # Third digit (if second is not 3)
     elif route[2] == "4":
         return "YW"
     else:
