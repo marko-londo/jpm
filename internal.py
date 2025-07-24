@@ -168,7 +168,11 @@ def dashboard():
     # 2. YW (Yardwaste) zone color this week
     yw_route, yw_color = get_yw_zone_color()
     color_code = "#3980ec" if yw_color == "Blue" else "#EAC100"
-    st.markdown(f"**Yardwaste Zone this week:** <span style='color:{color_code};font-weight:bold;'>{yw_route} ({yw_color})</span>", unsafe_allow_html=True)
+    st.markdown(
+    f"### Yardwaste Zone: <span style='color:{color_code};font-weight:bold;'>{yw_route} ({yw_color})</span>",
+    unsafe_allow_html=True
+    )
+
 
     # 3. Count unique routes per service type for today's zone
     service_info = [
