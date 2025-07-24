@@ -74,8 +74,6 @@ def user_login(authenticator, credentials):
     return name, username, user_role
 
 def home():
-    st.markdown("<br>", unsafe_allow_html=True)  
-    
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
