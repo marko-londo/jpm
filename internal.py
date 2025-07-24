@@ -363,26 +363,24 @@ def plot_route_bar(records, title):
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_all_time_area(records, title="Historical Missed Stops by Service Type"):
+def plot_all_time_area(records, title="Missed Stops by Service Type Over Time"):
     df = pd.DataFrame(records)
-    # Ensure correct columns
     if df.empty or "Date" not in df.columns or "Service Type" not in df.columns:
         st.info("No date/service data available for area chart.")
         return
 
-    # Parse dates and filter invalid
+    # Parse and clean dates
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     df = df.dropna(subset=["Date", "Service Type"])
-    df = df[df["Date"] >= pd.Timestamp("2021-01-01")]  # Adjust if needed
+    df = df[df["Date"] >= pd.Timestamp("2021-01-01")]  # adjust as needed
 
-    # Group by Date and Service Type, count misses
+    # Group by date & service, count
     misses_by_date_service = (
         df.groupby([df["Date"].dt.date, "Service Type"])
         .size()
         .reset_index(name="Misses")
     )
 
-    # Sort for correct plotting
     misses_by_date_service = misses_by_date_service.sort_values("Date")
 
     color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
@@ -397,8 +395,20 @@ def plot_all_time_area(records, title="Historical Missed Stops by Service Type")
         labels={"Date": "Date", "Misses": "Missed Stops"},
         title=title,
     )
-    fig.update_layout(template="plotly_white", height=420, xaxis_title=None, yaxis_title="Missed Stops")
+    fig.update_layout(
+        template="plotly_white",
+        height=420,
+        xaxis_title=None,
+        yaxis_title="Missed Stops",
+        legend_title_text='Service Type',
+        # Key line: disables stacking!
+        stackgroup=None,
+    )
+    # Also ensures area is NOT stacked (for recent Plotly versions, stackgroup=None disables stacking)
+    fig.update_traces(stackgroup=None, mode="lines", line_shape="linear")
+
     st.plotly_chart(fig, use_container_width=True)
+
 
 def get_all_time_records():
     results = DRIVE_SERVICE.files().list(
@@ -590,11 +600,11 @@ def dashboard():
 
     # All Time stats/charts
     stats_table(all_time_stats, "All Time Missed Stops")
-    with st.expander("All Time Misses by Service", expanded=False):
-        plot_service_donut(get_all_time_records_cached(), "All Time Missed Stops by Service")
-    with st.expander("All Time Misses by Route", expanded=False):
-        plot_route_bar(get_all_time_records_cached(), "All Time Missed Stops by Route")
-    with st.expander("All Misses Over Time", expanded=True):
+    with st.expander("All Misses by Service", expanded=False):
+        plot_service_donut(get_all_time_records_cached(), "All Missed Stops by Service")
+    with st.expander("All Misses by Route", expanded=False):
+        plot_route_bar(get_all_time_records_cached(), "All Missed Stops by Route")
+    with st.expander("All Misses Over Time by Service", expanded=True):
         plot_all_time_area(get_all_time_records())
     st.divider()
 
