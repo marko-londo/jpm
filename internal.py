@@ -26,6 +26,10 @@ SIDEBAR_LOGO = "https://github.com/marko-londo/jpm/blob/main/logo_elephant.png?r
 CREDENTIALS_JSON = st.secrets["auth_users"]["usernames"]
 CREDENTIALS = json.loads(CREDENTIALS_JSON)
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
+COOKIE_SECRET = st.secrets["auth"]["cookie_secret"] 
+
+authenticator = stauth.Authenticate(
+    CREDENTIALS, 'missed_stops_app', COOKIE_SECRET, cookie_expiry_days=3)
 
 # Google/Dropbox Config
 FOLDER_ID = '1iTHUFwGHpWCAIz88SPBrmjDFJdGsOBJO'
