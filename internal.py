@@ -267,6 +267,21 @@ def get_month_records():
     ]
     return filtered
 
+# --- CACHED SHEETS READS ---
+
+@st.cache_data(ttl=300)  # 5 minutes; adjust as needed
+def get_tab_records_cached(day="today"):
+    return get_tab_records(day)
+
+@st.cache_data(ttl=300)
+def get_week_records_cached():
+    return get_week_records()
+
+@st.cache_data(ttl=300)
+def get_month_records_cached():
+    return get_month_records()
+
+
 def compute_stats(records, service_types=SERVICE_TYPES):
     result = {}
     for service in service_types + ["ALL"]:
@@ -356,10 +371,11 @@ def dashboard():
 
     # 3. Missed Stop Statistics Section
     with st.spinner("Loading missed stop stats..."):
-        today_stats = compute_stats(get_tab_records("today"))
-        yesterday_stats = compute_stats(get_tab_records("yesterday"))
-        week_stats = compute_stats(get_week_records())
-        month_stats = compute_stats(get_month_records())
+        today_stats = compute_stats(get_tab_records_cached("today"))
+        yesterday_stats = compute_stats(get_tab_records_cached("yesterday"))
+        week_stats = compute_stats(get_week_records_cached())
+        month_stats = compute_stats(get_month_records_cached())
+
 
     def stats_table(stats, title):
         st.markdown(f"**{title}**")
