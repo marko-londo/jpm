@@ -276,22 +276,35 @@ def plot_service_donut(records, title):
         return
     counts = df["Service Type"].value_counts().reset_index()
     counts.columns = ["Service", "Misses"]
+    # Map to friendly order
+    counts["Service"] = pd.Categorical(counts["Service"], ["MSW", "SS", "YW"])
+    counts = counts.sort_values("Service")
+    color_map = {
+        "MSW": "#57B560",  # green
+        "SS": "#4FC3F7",   # blue
+        "YW": "#F6C244",   # yellow
+    }
+    import plotly.express as px
     fig = px.pie(
         counts,
         values="Misses",
         names="Service",
         title=title,
-        hole=0.45
+        hole=0.45,
+        color="Service",
+        color_discrete_map=color_map
     )
     fig.update_traces(textinfo="percent+label", marker=dict(line=dict(color='#fff', width=2)))
     fig.update_layout(showlegend=True, template="plotly_white")
     st.plotly_chart(fig, use_container_width=True)
+
 
 def plot_route_bar(records, title):
     df = pd.DataFrame(records)
     if df.empty or "Route" not in df.columns:
         st.info(f"No route data for {title}")
         return
+    df["Route"] = df["Route"].astype(str)   # <-- make sure routes are string
     route_counts = df["Route"].value_counts().reset_index()
     route_counts.columns = ["Route", "Misses"]
     fig = px.bar(
@@ -305,7 +318,6 @@ def plot_route_bar(records, title):
     fig.update_layout(template="plotly_white", yaxis=dict(autorange="reversed"), height=400)
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
-
 
 # --- CACHED SHEETS READS ---
 
@@ -445,7 +457,7 @@ def dashboard():
 
 
     stats_table(today_stats, "Today's Missed Stops")
-    with st.expander("Today's Misses by Service", expanded=True):
+    with st.expander("Today's Misses by Service", expanded=False):
         plot_service_donut(get_tab_records_cached("today"), "Today's Missed Stops by Service")
     with st.expander("Today's Misses by Route", expanded=False):
         plot_route_bar(get_tab_records_cached("today"), "Today's Missed Stops by Route")    
