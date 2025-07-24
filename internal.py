@@ -111,6 +111,15 @@ def header():
         unsafe_allow_html=True
     )
 
+def dashboard():
+    st.write("Dashboard")
+
+def hotlist():
+    st.write("Hotlist")
+
+def testing():
+    st.write("Testing")
+
 def ops():
     st.sidebar.subheader("Operations")
     op_select = st.sidebar.radio("Select Operation:", ["Dashboard", "Hotlist", "Testing"])
@@ -123,4 +132,5 @@ def ops():
 
 name, username, user_role = user_login(authenticator, credentials)
 header()
-
+if user_role == "jpm":
+    ops(name, user_role)
