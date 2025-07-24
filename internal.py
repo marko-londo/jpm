@@ -14,48 +14,70 @@ import uuid
 import pandas as pd
 import time
 
-jpm_logo = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
-sidebar_logo = "https://github.com/marko-londo/jpm/blob/main/logo_elephant.png?raw=true"
+# --------------------------
+# GLOBAL CONSTANTS & CONFIG
+# --------------------------
 
-credentials_json = st.secrets["auth_users"]["usernames"]
+# Logos and Branding
+JPM_LOGO = "https://github.com/marko-londo/coa_testing/blob/main/1752457645003.png?raw=true"
+SIDEBAR_LOGO = "https://github.com/marko-londo/jpm/blob/main/logo_elephant.png?raw=true"
 
-credentials = json.loads(credentials_json)
-
-authenticator = stauth.Authenticate(
-    credentials, 'missed_stops_app', 'some_secret_key', cookie_expiry_days=3)
-
-app_key = st.secrets["dropbox"]["app_key"]
-
-app_secret = st.secrets["dropbox"]["app_secret"]
-
-refresh_token = st.secrets["dropbox"]["refresh_token"]
-
-dbx = dropbox.Dropbox(
-    oauth2_refresh_token=refresh_token,
-    app_key=app_key,
-    app_secret=app_secret
-)
-
+# Credentials and Secrets
+CREDENTIALS_JSON = st.secrets["auth_users"]["usernames"]
+CREDENTIALS = json.loads(CREDENTIALS_JSON)
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
 
+# Google/Dropbox Config
 FOLDER_ID = '1iTHUFwGHpWCAIz88SPBrmjDFJdGsOBJO'
-
 ADDRESS_LIST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1JJeufDkoQ6p_LMe5F-Nrf_t0r_dHrAHu8P8WXi96V9A/edit#gid=0"
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+# Service Types & Statuses
+SERVICE_TYPES = ["MSW", "SS", "YW"]
+RESOLVED_STATUSES = {
+    "PICKED UP", "REJECTED", "CONFIRMED PREMATURE",
+    "ONE TIME EXCEPTION", "NOT OUT", "CREATED IN ERROR"
+}
+LEGITIMATE_STATUS = "PICKED UP"
 
-credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
+# Timezone and Date
+NY_TZ = pytz.timezone("America/New_York")
+TODAY = datetime.datetime.now(NY_TZ).date()
+THIS_MONTH = TODAY.strftime("%Y-%m")
 
-gs_client = gspread.authorize(credentials_gs)
+# Google API Auth
+CREDENTIALS_GS = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
+GS_CLIENT = gspread.authorize(CREDENTIALS_GS)
+DRIVE_SERVICE = build('drive', 'v3', credentials=CREDENTIALS_GS)
 
+# Dropbox Auth
+APP_KEY = st.secrets["dropbox"]["app_key"]
+APP_SECRET = st.secrets["dropbox"]["app_secret"]
+REFRESH_TOKEN = st.secrets["dropbox"]["refresh_token"]
+DBX = dropbox.Dropbox(
+    oauth2_refresh_token=REFRESH_TOKEN,
+    app_key=APP_KEY,
+    app_secret=APP_SECRET
+)
+
+# Streamlit Config
 st.set_page_config(
     page_title="JPM Ops | JP Mascaro & Sons",
     page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
     layout="centered",  # or "wide"
     initial_sidebar_state="collapsed",
-    )
+)
+st.logo(image=SIDEBAR_LOGO)
 
-st.logo(image=sidebar_logo)
+# --------------------------
+# UTILITY FUNCTIONS
+# --------------------------
+
+def clean_status(val):
+    return str(val).strip().upper()
 
 @st.cache_data(ttl=1800)
 def load_address_df(_gs_client, sheet_url):
@@ -63,20 +85,14 @@ def load_address_df(_gs_client, sheet_url):
     df = pd.DataFrame(ws.get_all_records())
     return df
 
-
-with st.spinner("Loading address data..."):
-    address_df = load_address_df(gs_client, ADDRESS_LIST_SHEET_URL)
-
 def user_login(authenticator, credentials):
     name, authentication_status, username = authenticator.login('main')
-
     if authentication_status is False:
         st.error("Incorrect username or password. Please try again.", icon=":material/error:")
         st.stop()
     elif authentication_status is None:
         st.info("Please enter your username and password.", icon=":material/passkey:")
         st.stop()
-
     user_obj = credentials["usernames"].get(username, {})
     user_role = user_obj.get("role", "city")
     st.info(f"Welcome, {name}!", icon=":material/account_circle:")
@@ -87,12 +103,11 @@ def header():
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
-            <img src='{jpm_logo}' width='320'>
+            <img src='{JPM_LOGO}' width='320'>
         </div>
         """,
         unsafe_allow_html=True
     )
-
     st.markdown("""
         <style>
         h1 {
@@ -109,7 +124,6 @@ def header():
         }
         </style>
         """, unsafe_allow_html=True)
-
     st.markdown(
         """
         <div style='text-align:center;'>
@@ -130,7 +144,6 @@ def ensure_completion_times_gsheet_exists(drive, folder_id, title):
     if files:
         return files[0]['id']
     else:
-        # If you want to create it automatically, implement creation logic here.
         st.error(
             f"Completion Times sheet '{title}' does not exist in the specified folder.\n"
             "Please contact your admin to create this week's completion log sheet.", icon=":material/error:"
@@ -139,8 +152,7 @@ def ensure_completion_times_gsheet_exists(drive, folder_id, title):
 
 def get_today_operating_zone(address_df):
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    today = datetime.datetime.now().date()
-    today_idx = today.weekday()
+    today_idx = TODAY.weekday()
     if today_idx == 6:  # Sunday
         zone_day = "Friday"
     else:
@@ -149,13 +161,16 @@ def get_today_operating_zone(address_df):
 
 def get_yw_zone_color(today=None):
     if today is None:
-        today = datetime.datetime.now().date()
-    year = 2025
+        today = TODAY
+    year = today.year
     june_first = datetime.date(year, 6, 1)
     first_monday = june_first + datetime.timedelta(days=(0 - june_first.weekday() + 7) % 7)
     weeks_since = (today - first_monday).days // 7
     return "140" if weeks_since % 2 == 0 else "141"
 
+# --------------------------
+# PAGE LOGIC FUNCTIONS
+# --------------------------
 
 def dashboard():
     header()
@@ -170,7 +185,6 @@ def dashboard():
         f"### Yardwaste Zone: <span style='color:{color_code};font-weight:bold;'>{yw_route}</span>",
         unsafe_allow_html=True
     )
-
 
     # 3. Count unique routes per service type for today's zone
     service_info = [
@@ -202,8 +216,6 @@ def dashboard():
                 </div>
                 """, unsafe_allow_html=True
             )
-        
-
 
 def hotlist():
     st.write("Hotlist")
@@ -221,8 +233,14 @@ def ops(name, user_role):
     elif op_select == "Testing":
         testing()
 
-name, username, user_role = user_login(authenticator, credentials)
+# --------------------------
+# MAIN APP EXECUTION
+# --------------------------
+
+with st.spinner("Loading address data..."):
+    address_df = load_address_df(GS_CLIENT, ADDRESS_LIST_SHEET_URL)
+
+name, username, user_role = user_login(authenticator, CREDENTIALS)
 if user_role == "jpm":
     ops(name, user_role)
-
 
