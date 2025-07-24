@@ -178,7 +178,7 @@ def dashboard():
         ("SS Routes",  "SS Zone",  "SS Route", "#4FC3F7"),    # Light blue
         ("YW Routes",  "YW Zone",  "YW Route", "#F6C244"),    # Mustard/yellow
     ]
-    col1, col2, col3 = st.columns([1,1,1], gap="large")
+    col1, col2, col3 = st.columns([1,1,1], gap="medium")
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
         valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
         if "YW" in label:
