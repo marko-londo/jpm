@@ -49,7 +49,7 @@ credentials_gs = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, sco
 gs_client = gspread.authorize(credentials_gs)
 
 st.set_page_config(
-    page_title="MPU Portal | JP Mascaro & Sons",
+    page_title="JPM Ops | JP Mascaro & Sons",
     page_icon="https://raw.githubusercontent.com/marko-londo/coa_testing/refs/heads/main/favicon.ico",
     layout="centered",  # or "wide"
     initial_sidebar_state="collapsed",
