@@ -111,8 +111,63 @@ def header():
         unsafe_allow_html=True
     )
 
+def ensure_completion_times_gsheet_exists(drive, folder_id, title):
+    results = drive.files().list(
+        q=f"'{folder_id}' in parents and name='{title}' and mimeType='application/vnd.google-apps.spreadsheet'",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    if files:
+        return files[0]['id']
+    else:
+        # If you want to create it automatically, implement creation logic here.
+        st.error(
+            f"Completion Times sheet '{title}' does not exist in the specified folder.\n"
+            "Please contact your admin to create this week's completion log sheet.", icon=":material/error:"
+        )
+        st.stop()
+
 def dashboard():
-    st.write("Dashboard")
+    st.subheader("Dashboard")
+
+    # -- Load addresses data --
+    # If not already loaded globally, you can load here:
+    # sheet = gs_client.open_by_url(ADDRESS_LIST_SHEET_URL)
+    # ws = sheet.sheet1
+    # address_df = pd.DataFrame(ws.get_all_records())
+
+    # 1. Show today's operating zone
+    zone_day = get_today_operating_zone(address_df)
+    st.markdown(f"**Operating Zone (for today):** <span style='color:#2980B9;'>{zone_day}</span>", unsafe_allow_html=True)
+
+    # 2. YW (Yardwaste) zone color this week
+    yw_route, yw_color = get_yw_zone_color()
+    color_code = "#3980ec" if yw_color == "Blue" else "#EAC100"
+    st.markdown(f"**Yardwaste Zone this week:** <span style='color:{color_code};font-weight:bold;'>{yw_route} ({yw_color})</span>", unsafe_allow_html=True)
+
+    # 3. Count unique routes per service type for today's zone
+    service_info = [
+        ("MSW", "MSW Zone", "MSW Route", "#57B560"),    # Light green
+        ("SS",  "SS Zone",  "SS Route", "#4FC3F7"),    # Light blue
+        ("YW",  "YW Zone",  "YW Route", "#F6C244"),    # Mustard/yellow
+    ]
+    col1, col2, col3 = st.columns(3)
+    for i, (label, zone_col, route_col, color) in enumerate(service_info):
+        # Filter addresses where the zone for this service == today's operating zone
+        valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
+        # For YW, also filter by zone color
+        if label == "YW":
+            valid = valid[valid["YW Route"].astype(str).str.endswith(yw_route)]
+        routes = valid[route_col].unique()
+        count = len(routes)
+        with [col1, col2, col3][i]:
+            st.markdown(
+                f"<div style='background-color:{color};padding:18px 0;border-radius:10px;text-align:center;'>"
+                f"<span style='font-weight:bold;font-size:1.6em;'>{count}</span><br>"
+                f"<span style='font-size:1.1em'>{label}</span></div>", unsafe_allow_html=True
+            )
+        
+
 
 def hotlist():
     st.write("Hotlist")
@@ -130,7 +185,11 @@ def ops(name, user_role):
     elif op_select == "Testing":
         testing()
 
+addresses = gs_client.open_by_url(ADDRESS_LIST_SHEET_URL)
+
 name, username, user_role = user_login(authenticator, credentials)
 header()
 if user_role == "jpm":
     ops(name, user_role)
+
+
