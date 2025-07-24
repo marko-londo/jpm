@@ -194,6 +194,20 @@ def get_sheet_title(date):
     next_saturday = date + datetime.timedelta((5-date.weekday()) % 7)
     return f"Misses Week Ending {next_saturday.strftime('%Y-%m-%d')}"
 
+def decode_service_from_route(route):
+    """
+    Determines service type (MSW, SS, YW) based on 4-digit route number.
+    """
+    route = str(route).zfill(4)
+    # Second digit
+    if route[1] == "3":
+        return "SS"
+    # Third digit (if second is not 3)
+    elif route[2] == "4":
+        return "YW"
+    else:
+        return "MSW"
+
 def get_today_tab_name(date):
     weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     # Find this week's Monday
@@ -268,19 +282,74 @@ def get_month_records():
     ]
     return filtered
 
-def decode_service_from_route(route):
-    """
-    Determines service type (MSW, SS, YW) based on 4-digit route number.
-    """
-    route = str(route).zfill(4)
-    # Second digit
-    if route[1] == "3":
-        return "SS"
-    # Third digit (if second is not 3)
-    elif route[2] == "4":
-        return "YW"
-    else:
-        return "MSW"
+def get_all_time_records():
+    results = DRIVE_SERVICE.files().list(
+        q=f"'{FOLDER_ID}' in parents and name = 'Master Misses Log' and mimeType = 'application/vnd.google-apps.spreadsheet'",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    if not files:
+        return []
+    sheet_id = files[0]['id']
+    master_ws = GS_CLIENT.open_by_key(sheet_id).sheet1
+    records = master_ws.get_all_records()
+    return records
+
+
+# --- CACHED SHEETS READS ---
+
+@st.cache_data(ttl=300)  # 5 minutes; adjust as needed
+def get_tab_records_cached(day="today"):
+    return get_tab_records(day)
+
+@st.cache_data(ttl=300)
+def get_week_records_cached():
+    return get_week_records()
+
+@st.cache_data(ttl=300)
+def get_month_records_cached():
+    return get_month_records()
+
+@st.cache_data(ttl=300)
+def get_all_time_records_cached():
+    return get_all_time_records()
+
+
+def compute_stats(records, service_types=SERVICE_TYPES):
+    result = {}
+    for service in service_types + ["ALL"]:
+        result[service] = {
+            "total_misses": 0,
+            "legit_misses": 0,
+            "illegit_misses": 0,
+            "resolved": 0,
+            "pct_resolved": 0.0,
+            "pct_legit": 0.0,
+        }
+    for row in records:
+        addr = row.get("Address", "").strip()
+        if not addr:
+            continue
+        status = clean_status(row.get("Collection Status", ""))
+        service = row.get("Service Type", "").strip().upper()
+        is_resolved = status in RESOLVED_STATUSES
+        is_legit = status == LEGITIMATE_STATUS
+        applicable_services = [service] if service in service_types else []
+        applicable_services.append("ALL")  # Always track total
+        for s in applicable_services:
+            result[s]["total_misses"] += 1
+            if is_legit:
+                result[s]["legit_misses"] += 1
+            if is_resolved:
+                result[s]["resolved"] += 1
+    for s in result:
+        result[s]["illegit_misses"] = result[s]["resolved"] - result[s]["legit_misses"]
+        t = result[s]["total_misses"]
+        result[s]["pct_resolved"] = (result[s]["resolved"] / t * 100) if t else 0
+        result[s]["pct_legit"] = (result[s]["legit_misses"] / t * 100) if t else 0
+    return result
+
+# --- PLOTS ---
 
 def plot_service_donut(records, title):
     # Count misses by Service Type
@@ -405,75 +474,40 @@ def plot_all_time_lines(records, title="Missed Stops by Service Type Over Time")
 
     st.plotly_chart(fig, use_container_width=True)
 
+def plot_all_time_total_line(records, title="Total Missed Stops Over Time"):
+    df = pd.DataFrame(records)
+    if df.empty or "Date" not in df.columns:
+        st.info("No date data available for chart.")
+        return
 
+    # Parse and clean dates
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df = df.dropna(subset=["Date"])
+    df = df[df["Date"] >= pd.Timestamp("2021-01-01")]  # adjust as needed
 
-def get_all_time_records():
-    results = DRIVE_SERVICE.files().list(
-        q=f"'{FOLDER_ID}' in parents and name = 'Master Misses Log' and mimeType = 'application/vnd.google-apps.spreadsheet'",
-        fields="files(id, name)"
-    ).execute()
-    files = results.get('files', [])
-    if not files:
-        return []
-    sheet_id = files[0]['id']
-    master_ws = GS_CLIENT.open_by_key(sheet_id).sheet1
-    records = master_ws.get_all_records()
-    return records
+    # Group by date only, count
+    misses_by_date = (
+        df.groupby(df["Date"].dt.date)
+        .size()
+        .reset_index(name="Misses")
+        .sort_values("Date")
+    )
 
-
-# --- CACHED SHEETS READS ---
-
-@st.cache_data(ttl=300)  # 5 minutes; adjust as needed
-def get_tab_records_cached(day="today"):
-    return get_tab_records(day)
-
-@st.cache_data(ttl=300)
-def get_week_records_cached():
-    return get_week_records()
-
-@st.cache_data(ttl=300)
-def get_month_records_cached():
-    return get_month_records()
-
-@st.cache_data(ttl=300)
-def get_all_time_records_cached():
-    return get_all_time_records()
-
-
-def compute_stats(records, service_types=SERVICE_TYPES):
-    result = {}
-    for service in service_types + ["ALL"]:
-        result[service] = {
-            "total_misses": 0,
-            "legit_misses": 0,
-            "illegit_misses": 0,
-            "resolved": 0,
-            "pct_resolved": 0.0,
-            "pct_legit": 0.0,
-        }
-    for row in records:
-        addr = row.get("Address", "").strip()
-        if not addr:
-            continue
-        status = clean_status(row.get("Collection Status", ""))
-        service = row.get("Service Type", "").strip().upper()
-        is_resolved = status in RESOLVED_STATUSES
-        is_legit = status == LEGITIMATE_STATUS
-        applicable_services = [service] if service in service_types else []
-        applicable_services.append("ALL")  # Always track total
-        for s in applicable_services:
-            result[s]["total_misses"] += 1
-            if is_legit:
-                result[s]["legit_misses"] += 1
-            if is_resolved:
-                result[s]["resolved"] += 1
-    for s in result:
-        result[s]["illegit_misses"] = result[s]["resolved"] - result[s]["legit_misses"]
-        t = result[s]["total_misses"]
-        result[s]["pct_resolved"] = (result[s]["resolved"] / t * 100) if t else 0
-        result[s]["pct_legit"] = (result[s]["legit_misses"] / t * 100) if t else 0
-    return result
-
+    fig = px.line(
+        misses_by_date,
+        x="Date",
+        y="Misses",
+        labels={"Date": "Date", "Misses": "Missed Stops"},
+        title=title,
+    )
+    fig.update_layout(
+        template="plotly_white",
+        height=420,
+        xaxis_title=None,
+        yaxis_title="Missed Stops",
+        showlegend=False
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # --------------------------
 # PAGE LOGIC FUNCTIONS
@@ -604,6 +638,9 @@ def dashboard():
     with st.expander("All Misses Over Time by Service", expanded=True):
         plot_all_time_lines(get_all_time_records())
     st.divider()
+    with st.expander("Total Missed Stops Over Time", expanded=True):
+        plot_all_time_total_line(get_all_time_records())
+
 
 def hotlist():
     st.write("Hotlist")
