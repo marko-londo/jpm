@@ -322,12 +322,11 @@ def plot_route_bar(records, title):
     # Ensure routes are strings and decode service
     df["Route"] = df["Route"].astype(str)
     df["ServiceType"] = df["Route"].apply(decode_service_from_route)
+    # Group and sort only by Misses, descending
     route_counts = df.groupby(["Route", "ServiceType"]).size().reset_index(name="Misses")
-    route_counts = route_counts.sort_values("Misses", ascending=False).head(15)  # top 15
+    route_counts = route_counts.sort_values("Misses", ascending=False).head(15)
 
     color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
-    bar_colors = [color_map.get(service, "#B0B0B0") for service in route_counts["ServiceType"]]
-
     fig = px.bar(
         route_counts,
         x="Misses",
@@ -336,13 +335,13 @@ def plot_route_bar(records, title):
         title=title,
         text="Misses",
         color="ServiceType",
-        color_discrete_map=color_map
+        color_discrete_map=color_map,
     )
     fig.update_layout(
         template="plotly_white",
         yaxis=dict(autorange="reversed"),
         height=400,
-        showlegend=True
+        showlegend=False  # Hide legend entirely
     )
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
