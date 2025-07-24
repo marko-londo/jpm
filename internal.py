@@ -185,6 +185,7 @@ def dashboard():
             valid = valid[valid["YW Route"].astype(str).str.contains(yw_route, na=False)]
         routes = valid[route_col].unique()
         count = len(routes)
+        label_display = label.replace("Routes", "Route" if count == 1 else "Routes")
         with [col1, col2, col3][i]:
             st.markdown(
                 f"""
@@ -196,12 +197,11 @@ def dashboard():
                             min-height:60px;
                             margin:0 auto;
                             box-shadow:0 1px 6px #2222;'>
-                  <span style='font-weight:700;font-size:1.15em;'>{count}</span><br>
-                  <span style='font-size:0.95em'>{label}</span>
+                <span style='font-weight:700;font-size:1.15em;'>{count}</span><br>
+                <span style='font-size:0.95em'>{label_display}</span>
                 </div>
                 """, unsafe_allow_html=True
             )
-
         
 
 
