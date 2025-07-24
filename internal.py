@@ -12,6 +12,7 @@ import dropbox
 from googleapiclient.errors import HttpError
 import uuid
 import pandas as pd
+import plotly.express as px
 import time
 
 # --------------------------
@@ -448,6 +449,7 @@ def dashboard():
         plot_service_donut(get_tab_records_cached("today"), "Today's Missed Stops by Service")
     with st.expander("Today's Misses by Route", expanded=False):
         plot_route_bar(get_tab_records_cached("today"), "Today's Missed Stops by Route")    
+
     stats_table(yesterday_stats, "Yesterday's Missed Stops")
     stats_table(week_stats, "This Week's Missed Stops")
     stats_table(month_stats, "This Month's Missed Stops")
