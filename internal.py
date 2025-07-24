@@ -57,6 +57,15 @@ st.set_page_config(
 
 st.logo(image=sidebar_logo)
 
+@st.cache_data(ttl=1800)  # Cache for 30 minutes; adjust as needed
+def load_address_df(gs_client, sheet_url):
+    ws = gs_client.open_by_url(sheet_url).sheet1
+    df = pd.DataFrame(ws.get_all_records())
+    return df
+
+with st.spinner("Loading address data..."):
+    address_df = load_address_df(gs_client, ADDRESS_LIST_SHEET_URL)
+
 def user_login(authenticator, credentials):
     name, authentication_status, username = authenticator.login('main')
 
@@ -126,6 +135,28 @@ def ensure_completion_times_gsheet_exists(drive, folder_id, title):
             "Please contact your admin to create this week's completion log sheet.", icon=":material/error:"
         )
         st.stop()
+
+def get_today_operating_zone(address_df):
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    today = datetime.datetime.now().date()
+    today_idx = today.weekday()
+    if today_idx == 6:  # Sunday
+        zone_day = "Friday"
+    else:
+        zone_day = days[today_idx - 1]  # minus one day
+    return zone_day
+
+def get_yw_zone_color(today=None):
+    if today is None:
+        today = datetime.datetime.now().date()
+    year = 2025
+    june_first = datetime.date(year, 6, 1)
+    first_monday = june_first + datetime.timedelta(days=(0 - june_first.weekday() + 7) % 7)
+    weeks_since = (today - first_monday).days // 7
+    if weeks_since % 2 == 0:
+        return "140", "Blue"
+    else:
+        return "141", "Yellow"
 
 def dashboard():
     st.subheader("Dashboard")
