@@ -319,13 +319,20 @@ def plot_route_bar(records, title):
     if df.empty or "Route" not in df.columns:
         st.info(f"No route data for {title}")
         return
-    # Ensure routes are strings and decode service
     df["Route"] = df["Route"].astype(str)
     df["ServiceType"] = df["Route"].apply(decode_service_from_route)
-    # Group and sort only by Misses, descending
-    route_counts = df.groupby(["Route", "ServiceType"]).size().reset_index(name="Misses")
-    route_counts = route_counts.sort_values("Misses", ascending=False).head(15)
-
+    # Count total misses per route (regardless of service type)
+    route_counts = (
+        df.groupby("Route")
+        .size()
+        .reset_index(name="Misses")
+        .sort_values("Misses", ascending=False)
+        .head(15)
+    )
+    # Add ServiceType column for color (use first occurrence)
+    route_counts["ServiceType"] = route_counts["Route"].apply(
+        lambda x: df[df["Route"] == x]["ServiceType"].iloc[0]
+    )
     color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
     fig = px.bar(
         route_counts,
@@ -341,10 +348,11 @@ def plot_route_bar(records, title):
         template="plotly_white",
         yaxis=dict(autorange="reversed"),
         height=400,
-        showlegend=False  # Hide legend entirely
+        showlegend=False  # No legend
     )
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
+
 
 # --- CACHED SHEETS READS ---
 
