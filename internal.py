@@ -363,10 +363,10 @@ def plot_route_bar(records, title):
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_all_time_area(records, title="Missed Stops by Service Type Over Time"):
+def plot_all_time_lines(records, title="Missed Stops by Service Type Over Time"):
     df = pd.DataFrame(records)
     if df.empty or "Date" not in df.columns or "Service Type" not in df.columns:
-        st.info("No date/service data available for area chart.")
+        st.info("No date/service data available for line chart.")
         return
 
     # Parse and clean dates
@@ -385,7 +385,7 @@ def plot_all_time_area(records, title="Missed Stops by Service Type Over Time"):
 
     color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
 
-    fig = px.area(
+    fig = px.line(
         misses_by_date_service,
         x="Date",
         y="Misses",
@@ -401,13 +401,10 @@ def plot_all_time_area(records, title="Missed Stops by Service Type Over Time"):
         xaxis_title=None,
         yaxis_title="Missed Stops",
         legend_title_text='Service Type',
-        # Key line: disables stacking!
-        stackgroup=None,
     )
-    # Also ensures area is NOT stacked (for recent Plotly versions, stackgroup=None disables stacking)
-    fig.update_traces(stackgroup=None, mode="lines", line_shape="linear")
 
     st.plotly_chart(fig, use_container_width=True)
+
 
 
 def get_all_time_records():
