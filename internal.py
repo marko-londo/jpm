@@ -73,13 +73,9 @@ def user_login(authenticator, credentials):
     authenticator.logout("Logout", "sidebar")
     return name, username, user_role
 
-def updates():
-    APP_VERSION = "v2.3"
-
+def home():
+    st.markdown("<br>", unsafe_allow_html=True)  
     
-    st.markdown("<br>", unsafe_allow_html=True)  # One blank line
-    
-    # --- Centered Logo ---
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
@@ -88,8 +84,7 @@ def updates():
         """,
         unsafe_allow_html=True
     )
-    
-    # --- H1 Style ---
+
     st.markdown("""
         <style>
         h1 {
@@ -106,32 +101,27 @@ def updates():
         }
         </style>
         """, unsafe_allow_html=True)
-    
-    # --- Centered Header, Subtitle, and Divider ---
+
     st.markdown(
         """
         <div style='text-align:center;'>
-            <h1 style='color:#6CA0DC; margin-bottom:0;'>Missed Pickup Portal</h1>
-            <div style='font-size:1.1em; font-style:italic; margin-bottom:12px;'>
-                <span style='color:#FF8C8C;'>City of Allentown</span>
-                <span style='color:#fff; padding:0 10px;'>|</span>
-                <span style='color:#FF8C8C;'>JP Mascaro & Sons</span>
+            <h1 style='color:#6CA0DC; margin-bottom:0;'>Operations Portal</h1>
             </div>
             <hr style='border:1px solid #ececec; margin-top:0;'>
         </div>
         """,
         unsafe_allow_html=True
     )
-    
-    doc_col, fold_col = st.columns(2)
-    
-    with doc_col:
-            
-        DOC_LINK = "https://docs.google.com/document/d/1IpXrkvobu_oVvX-xnejYNUC16H_wQros1jfG_AXYrpU"
-        st.link_button("📄 View Full Docs", DOC_LINK)
 
-    with fold_col:
-        st.link_button("Open Folder", f"https://drive.google.com/drive/u/0/folders/1iTHUFwGHpWCAIz88SPBrmjDFJdGsOBJO")
+def ops():
+    st.sidebar.subheader("Operations")
+    op_select = st.sidebar.radio("Select Operation:", ["Dashboard", "Hotlist", "Testing"])
+    if op_select == "Dashboard":
+        dashboard()
+    elif op_select == "Hotlist":
+        hotlist()
+    elif op_select == "Testing":
+        testing()
 
+home()
 
-updates()
