@@ -354,7 +354,7 @@ def plot_route_bar(records, title):
         text="Misses",
         color="ServiceType",
         color_discrete_map=color_map,
-        category_orders={"Route": agg_route_counts["Route"].tolist()},
+        category_orders={"Route": list(agg_route_counts["Route"])[::-1]}
     )
     fig.update_layout(
         template="plotly_white",
