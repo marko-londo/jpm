@@ -1,0 +1,10 @@
+streamlit==1.46.1
+streamlit-authenticator==0.3.3
+gspread==6.2.1
+google-api-python-client==2.174.0
+google-auth==2.40.3
+pytz==2025.2
+pandas==2.3.0
+numpy==2.3.1
+Pillow==11.2.1
+dropbox
