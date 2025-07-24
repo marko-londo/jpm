@@ -326,6 +326,8 @@ def plot_route_bar(records, title):
     route_counts = route_counts.sort_values("Misses", ascending=False).head(15)  # top 15
 
     color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
+    bar_colors = [color_map.get(service, "#B0B0B0") for service in route_counts["ServiceType"]]
+
     fig = px.bar(
         route_counts,
         x="Misses",
@@ -340,15 +342,7 @@ def plot_route_bar(records, title):
         template="plotly_white",
         yaxis=dict(autorange="reversed"),
         height=400,
-        showlegend=True,
-        legend=dict(
-            orientation="v",
-            x=1,
-            y=0,
-            xanchor="right",
-            yanchor="bottom",
-            bgcolor="rgba(255,255,255,0.7)"  # light bg for legend readability
-        )
+        showlegend=True
     )
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
