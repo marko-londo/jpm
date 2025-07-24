@@ -172,9 +172,9 @@ def dashboard():
 
     # 3. Count unique routes per service type for today's zone
     service_info = [
-        ("MSW", "MSW Zone", "MSW Route", "#57B560"),    # Light green
-        ("SS",  "SS Zone",  "SS Route", "#4FC3F7"),    # Light blue
-        ("YW",  "YW Zone",  "YW Route", "#F6C244"),    # Mustard/yellow
+        ("MSW Routes", "MSW Zone", "MSW Route", "#57B560"),    # Light green
+        ("SS Routes",  "SS Zone",  "SS Route", "#4FC3F7"),    # Light blue
+        ("YW Routes",  "YW Zone",  "YW Route", "#F6C244"),    # Mustard/yellow
     ]
     col1, col2, col3 = st.columns(3)
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
