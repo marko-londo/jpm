@@ -365,6 +365,19 @@ def plot_route_bar(records, title):
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
 
+def get_all_time_records():
+    results = DRIVE_SERVICE.files().list(
+        q=f"'{FOLDER_ID}' in parents and name = 'Master Misses Log' and mimeType = 'application/vnd.google-apps.spreadsheet'",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    if not files:
+        return []
+    sheet_id = files[0]['id']
+    master_ws = GS_CLIENT.open_by_key(sheet_id).sheet1
+    records = master_ws.get_all_records()
+    return records
+
 
 # --- CACHED SHEETS READS ---
 
@@ -379,6 +392,10 @@ def get_week_records_cached():
 @st.cache_data(ttl=300)
 def get_month_records_cached():
     return get_month_records()
+
+@st.cache_data(ttl=300)
+def get_all_time_records_cached():
+    return get_all_time_records()
 
 
 def compute_stats(records, service_types=SERVICE_TYPES):
@@ -474,6 +491,7 @@ def dashboard():
         yesterday_stats = compute_stats(get_tab_records_cached("yesterday"))
         week_stats = compute_stats(get_week_records_cached())
         month_stats = compute_stats(get_month_records_cached())
+        all_time_stats = compute_stats(get_all_time_records_cached())
 
 
     def stats_table(stats, title):
@@ -533,6 +551,14 @@ def dashboard():
         plot_service_donut(get_month_records_cached(), "This Month's Missed Stops by Service")
     with st.expander("This Month's Misses by Route", expanded=False):
         plot_route_bar(get_month_records_cached(), "This Month's Missed Stops by Route")
+    st.divider()
+
+    # All Time stats/charts
+    stats_table(all_time_stats, "All Time Missed Stops")
+    with st.expander("All Time Misses by Service", expanded=False):
+        plot_service_donut(get_all_time_records_cached(), "All Time Missed Stops by Service")
+    with st.expander("All Time Misses by Route", expanded=False):
+        plot_route_bar(get_all_time_records_cached(), "All Time Missed Stops by Route")
     st.divider()
 
 def hotlist():
