@@ -160,17 +160,9 @@ def get_yw_zone_color(today=None):
         return "141", "Yellow"
 
 def dashboard():
-    st.subheader("Dashboard")
-
-    # -- Load addresses data --
-    # If not already loaded globally, you can load here:
-    # sheet = gs_client.open_by_url(ADDRESS_LIST_SHEET_URL)
-    # ws = sheet.sheet1
-    # address_df = pd.DataFrame(ws.get_all_records())
-
-    # 1. Show today's operating zone
+    # 1. Operating zone
     zone_day = get_today_operating_zone(address_df)
-    st.markdown(f"**Operating Zone (for today):** <span style='color:#2980B9;'>{zone_day}</span>", unsafe_allow_html=True)
+    st.subheader(f"**Operating Zone (for today):** <span style='color:#FF8C8C;'>{zone_day}</span>", unsafe_allow_html=True)
 
     # 2. YW (Yardwaste) zone color this week
     yw_route, yw_color = get_yw_zone_color()
