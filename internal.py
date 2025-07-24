@@ -168,17 +168,147 @@ def get_yw_zone_color(today=None):
     weeks_since = (today - first_monday).days // 7
     return "140" if weeks_since % 2 == 0 else "141"
 
+def get_tab_date(day="today"):
+    # Returns correct date for today/yesterday logic
+    if day == "today":
+        if TODAY.weekday() == 6:  # Sunday
+            return TODAY - datetime.timedelta(days=1)
+        return TODAY
+    elif day == "yesterday":
+        if TODAY.weekday() == 0:  # Monday -> Sat
+            return TODAY - datetime.timedelta(days=2)
+        elif TODAY.weekday() == 6:  # Sunday -> Fri
+            return TODAY - datetime.timedelta(days=2)
+        return TODAY - datetime.timedelta(days=1)
+    else:
+        raise ValueError("day must be 'today' or 'yesterday'")
+
+def get_sheet_title(date):
+    # Replicate your week-ending logic here if needed!
+    # Placeholder example:
+    next_saturday = date + datetime.timedelta((5-date.weekday()) % 7)
+    return f"Misses Week Ending {next_saturday.strftime('%Y-%m-%d')}"
+
+def get_today_tab_name(date):
+    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    # Find this week's Monday
+    next_saturday = date + datetime.timedelta((5-date.weekday()) % 7)
+    monday = next_saturday - datetime.timedelta(days=5)
+    idx = (date - monday).days
+    label = weekdays[idx] if 0 <= idx < 6 else weekdays[0]
+    return f"{label} {date.month}/{date.day}/{str(date.year)[-2:]}"
+
+def get_tab_records(day="today"):
+    date = get_tab_date(day)
+    sheet_title = get_sheet_title(date)
+    tab_name = get_today_tab_name(date)
+    # Find the sheet ID
+    results = DRIVE_SERVICE.files().list(
+        q=f"'{FOLDER_ID}' in parents and name='{sheet_title}' and mimeType='application/vnd.google-apps.spreadsheet'",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    if not files:
+        return []
+    sheet_id = files[0]['id']
+    weekly_ss = GS_CLIENT.open_by_key(sheet_id)
+    try:
+        ws = weekly_ss.worksheet(tab_name)
+        records = ws.get_all_records()
+        return records
+    except Exception:
+        return []
+
+def get_week_records():
+    date = TODAY
+    sheet_title = get_sheet_title(date)
+    results = DRIVE_SERVICE.files().list(
+        q=f"'{FOLDER_ID}' in parents and name='{sheet_title}' and mimeType='application/vnd.google-apps.spreadsheet'",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    if not files:
+        return []
+    sheet_id = files[0]['id']
+    weekly_ss = GS_CLIENT.open_by_key(sheet_id)
+    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    week_records = []
+    next_saturday = date + datetime.timedelta((5-date.weekday()) % 7)
+    monday = next_saturday - datetime.timedelta(days=5)
+    for i in range(6):
+        tab_date = monday + datetime.timedelta(days=i)
+        tab_name = f"{weekdays[i]} {tab_date.month}/{tab_date.day}/{str(tab_date.year)[-2:]}"
+        try:
+            ws = weekly_ss.worksheet(tab_name)
+            week_records.extend(ws.get_all_records())
+        except Exception:
+            continue
+    return week_records
+
+def get_month_records():
+    # Master Misses Log: must be named exactly as such in folder
+    results = DRIVE_SERVICE.files().list(
+        q=f"'{FOLDER_ID}' in parents and name = 'Master Misses Log' and mimeType = 'application/vnd.google-apps.spreadsheet'",
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    if not files:
+        return []
+    sheet_id = files[0]['id']
+    master_ws = GS_CLIENT.open_by_key(sheet_id).sheet1
+    records = master_ws.get_all_records()
+    filtered = [
+        row for row in records
+        if str(row.get("Time Sent to JPM", "")).startswith(THIS_MONTH)
+    ]
+    return filtered
+
+def compute_stats(records, service_types=SERVICE_TYPES):
+    result = {}
+    for service in service_types + ["ALL"]:
+        result[service] = {
+            "total_misses": 0,
+            "legit_misses": 0,
+            "illegit_misses": 0,
+            "resolved": 0,
+            "pct_resolved": 0.0,
+            "pct_legit": 0.0,
+        }
+    for row in records:
+        addr = row.get("Address", "").strip()
+        if not addr:
+            continue
+        status = clean_status(row.get("Collection Status", ""))
+        service = row.get("Service Type", "").strip().upper()
+        is_resolved = status in RESOLVED_STATUSES
+        is_legit = status == LEGITIMATE_STATUS
+        applicable_services = [service] if service in service_types else []
+        applicable_services.append("ALL")  # Always track total
+        for s in applicable_services:
+            result[s]["total_misses"] += 1
+            if is_legit:
+                result[s]["legit_misses"] += 1
+            if is_resolved:
+                result[s]["resolved"] += 1
+    for s in result:
+        result[s]["illegit_misses"] = result[s]["resolved"] - result[s]["legit_misses"]
+        t = result[s]["total_misses"]
+        result[s]["pct_resolved"] = (result[s]["resolved"] / t * 100) if t else 0
+        result[s]["pct_legit"] = (result[s]["legit_misses"] / t * 100) if t else 0
+    return result
+
+
 # --------------------------
 # PAGE LOGIC FUNCTIONS
 # --------------------------
 
 def dashboard():
     header()
-    # 1. Operating zone
+
+    # 1. Today's Operating Zone and Route Context
     zone_day = get_today_operating_zone(address_df)
     st.markdown(f"### Zone: <span style='color:#FF8C8C;'>{zone_day}</span>", unsafe_allow_html=True)
 
-    # 2. YW (Yardwaste) zone color this week
     yw_route = get_yw_zone_color()
     color_code = "#3980ec" if yw_route == "140" else "#EAC100"
     st.markdown(
@@ -186,13 +316,14 @@ def dashboard():
         unsafe_allow_html=True
     )
 
-    # 3. Count unique routes per service type for today's zone
+    # 2. Route Counts by Service Type
+    st.markdown("#### Route Counts by Service")
     service_info = [
-        ("MSW Routes", "MSW Zone", "MSW Route", "#57B560"),    # Light green
-        ("SS Routes",  "SS Zone",  "SS Route", "#4FC3F7"),    # Light blue
-        ("YW Routes",  "YW Zone",  "YW Route", "#F6C244"),    # Mustard/yellow
+        ("MSW Routes", "MSW Zone", "MSW Route", "#57B560"),
+        ("SS Routes",  "SS Zone",  "SS Route", "#4FC3F7"),
+        ("YW Routes",  "YW Zone",  "YW Route", "#F6C244"),
     ]
-    col1, col2, col3 = st.columns([1,1,1], gap="medium")
+    col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
         valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
         if "YW" in label:
@@ -216,6 +347,38 @@ def dashboard():
                 </div>
                 """, unsafe_allow_html=True
             )
+
+    st.divider()
+
+    # 3. Missed Stop Statistics Section
+    with st.spinner("Loading missed stop stats..."):
+        today_stats = compute_stats(get_tab_records("today"))
+        yesterday_stats = compute_stats(get_tab_records("yesterday"))
+        week_stats = compute_stats(get_week_records())
+        month_stats = compute_stats(get_month_records())
+
+    def stats_table(stats, title):
+        st.markdown(f"**{title}**")
+        table = []
+        for key in ["ALL"] + SERVICE_TYPES:
+            s = stats[key]
+            label = "Total" if key == "ALL" else key
+            table.append({
+                "Service": label,
+                "Submitted": s["total_misses"],
+                "Legitimate": s["legit_misses"],
+                "Illegitimate": s["illegit_misses"],
+                "Resolved": s["resolved"],
+                "% Resolved": f"{s['pct_resolved']:.1f}%",
+                "% Legitimate": f"{s['pct_legit']:.1f}%"
+            })
+        st.dataframe(pd.DataFrame(table), hide_index=True, use_container_width=True)
+
+    stats_table(today_stats, "Today's Missed Stops")
+    stats_table(yesterday_stats, "Yesterday's Missed Stops")
+    stats_table(week_stats, "This Week's Missed Stops")
+    stats_table(month_stats, "This Month's Missed Stops")
+    st.divider()
 
 def hotlist():
     st.write("Hotlist")
