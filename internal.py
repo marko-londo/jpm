@@ -312,8 +312,6 @@ def plot_service_donut(records, title):
     fig.update_layout(showlegend=True, template="plotly_white")
     st.plotly_chart(fig, use_container_width=True)
 
-
-
 def plot_route_bar(records, title):
     df = pd.DataFrame(records)
     if df.empty or "Route" not in df.columns:
@@ -363,6 +361,43 @@ def plot_route_bar(records, title):
         showlegend=False  # Hide legend
     )
     fig.update_traces(textposition='outside')
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_all_time_area(records, title="All Time Misses Over Time by Service Type"):
+    df = pd.DataFrame(records)
+    # Ensure correct columns
+    if df.empty or "Date" not in df.columns or "Service Type" not in df.columns:
+        st.info("No date/service data available for area chart.")
+        return
+
+    # Parse dates and filter invalid
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df = df.dropna(subset=["Date", "Service Type"])
+    df = df[df["Date"] >= pd.Timestamp("2021-01-01")]  # Adjust if needed
+
+    # Group by Date and Service Type, count misses
+    misses_by_date_service = (
+        df.groupby([df["Date"].dt.date, "Service Type"])
+        .size()
+        .reset_index(name="Misses")
+    )
+
+    # Sort for correct plotting
+    misses_by_date_service = misses_by_date_service.sort_values("Date")
+
+    color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
+
+    fig = px.area(
+        misses_by_date_service,
+        x="Date",
+        y="Misses",
+        color="Service Type",
+        color_discrete_map=color_map,
+        line_group="Service Type",
+        labels={"Date": "Date", "Misses": "Missed Stops"},
+        title=title,
+    )
+    fig.update_layout(template="plotly_white", height=420, xaxis_title=None, yaxis_title="Missed Stops")
     st.plotly_chart(fig, use_container_width=True)
 
 def get_all_time_records():
@@ -559,6 +594,8 @@ def dashboard():
         plot_service_donut(get_all_time_records_cached(), "All Time Missed Stops by Service")
     with st.expander("All Time Misses by Route", expanded=False):
         plot_route_bar(get_all_time_records_cached(), "All Time Missed Stops by Route")
+    with st.expander("All Time Misses Over Time", expanded=True):
+        plot_all_time_area(get_all_time_records())
     st.divider()
 
 def hotlist():
