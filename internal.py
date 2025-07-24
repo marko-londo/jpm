@@ -268,6 +268,18 @@ def get_month_records():
     ]
     return filtered
 
+def decode_service_from_route(route):
+    """Decodes the service type from the route number as a string."""
+    route = str(route)
+    if len(route) < 3:
+        return "MSW"  # Default/fallback
+    if route[1] == "3":
+        return "SS"
+    elif route[2] == "4":
+        return "YW"
+    else:
+        return "MSW"
+
 def plot_service_donut(records, title):
     # Count misses by Service Type
     df = pd.DataFrame(records)
@@ -299,23 +311,37 @@ def plot_service_donut(records, title):
     st.plotly_chart(fig, use_container_width=True)
 
 
+
 def plot_route_bar(records, title):
     df = pd.DataFrame(records)
     if df.empty or "Route" not in df.columns:
         st.info(f"No route data for {title}")
         return
-    df["Route"] = df["Route"].astype(str)   # <-- make sure routes are string
-    route_counts = df["Route"].value_counts().reset_index()
-    route_counts.columns = ["Route", "Misses"]
+    # Ensure routes are strings and decode service
+    df["Route"] = df["Route"].astype(str)
+    df["ServiceType"] = df["Route"].apply(decode_service_from_route)
+    route_counts = df.groupby(["Route", "ServiceType"]).size().reset_index(name="Misses")
+    route_counts = route_counts.sort_values("Misses", ascending=False).head(15)  # top 15
+
+    color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
+    bar_colors = [color_map.get(service, "#B0B0B0") for service in route_counts["ServiceType"]]
+
     fig = px.bar(
-        route_counts.sort_values("Misses", ascending=False).head(15),  # top 15
+        route_counts,
         x="Misses",
         y="Route",
         orientation="h",
         title=title,
-        text="Misses"
+        text="Misses",
+        color="ServiceType",
+        color_discrete_map=color_map
     )
-    fig.update_layout(template="plotly_white", yaxis=dict(autorange="reversed"), height=400)
+    fig.update_layout(
+        template="plotly_white",
+        yaxis=dict(autorange="reversed"),
+        height=400,
+        showlegend=True
+    )
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
 
