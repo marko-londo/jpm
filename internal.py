@@ -39,7 +39,7 @@ dbx = dropbox.Dropbox(
 
 SERVICE_ACCOUNT_INFO = st.secrets["google_service_account"]
 
-FOLDER_ID = '18f3aW-ZI5-tNKBCfHwToQ7MXQ3DS1MFj'
+FOLDER_ID = '1iTHUFwGHpWCAIz88SPBrmjDFJdGsOBJO'
 
 ADDRESS_LIST_SHEET_URL = "https://docs.google.com/spreadsheets/d/1JJeufDkoQ6p_LMe5F-Nrf_t0r_dHrAHu8P8WXi96V9A/edit#gid=0"
 
