@@ -120,7 +120,7 @@ def hotlist():
 def testing():
     st.write("Testing")
 
-def ops():
+def ops(name, user_role):
     st.sidebar.subheader("Operations")
     op_select = st.sidebar.radio("Select Operation:", ["Dashboard", "Hotlist", "Testing"])
     if op_select == "Dashboard":
