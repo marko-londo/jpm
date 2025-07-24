@@ -75,13 +75,6 @@ def user_login(authenticator, credentials):
 
 def updates():
     APP_VERSION = "v2.3"
-    CHANGELOG = """
-    - **v2.3** (2025-07-18):  
-        - Added “Submit Completion Times” section for JPM
-        - Stops submitted before completion time will be flagged as potentially premature
-
-
-    """
 
     
     st.markdown("<br>", unsafe_allow_html=True)  # One blank line
@@ -130,24 +123,15 @@ def updates():
         unsafe_allow_html=True
     )
     
-    # --- App Version (left-aligned) ---
-    st.markdown(f"<div style='color:gray;margin-bottom:8px;'>{APP_VERSION}</div>", unsafe_allow_html=True)
-
-    with st.expander("What's New?", expanded=False):
-            st.markdown(CHANGELOG)
-        
-    doc_col, sht_col, fold_col = st.columns(3)
+    doc_col, fold_col = st.columns(2)
     
     with doc_col:
             
-        DOC_LINK = "https://docs.google.com/document/d/1UkKj56Qn-25gMWheC-G2rC6YRJzeGsfxk9k2XNLpeTw"
+        DOC_LINK = "https://docs.google.com/document/d/1IpXrkvobu_oVvX-xnejYNUC16H_wQros1jfG_AXYrpU"
         st.link_button("📄 View Full Docs", DOC_LINK)
 
-    with sht_col:
-        st.link_button("Open Sheet", f"https://docs.google.com/spreadsheets/d/{weekly_id}/edit")
-
     with fold_col:
-        st.link_button("Open Folder", f"https://drive.google.com/drive/u/0/folders/1ogx3zPeIdTKp7C5EJ5jKavFv21mDmySj")
+        st.link_button("Open Folder", f"https://drive.google.com/drive/u/0/folders/1iTHUFwGHpWCAIz88SPBrmjDFJdGsOBJO")
 
 
 updates()
