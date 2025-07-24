@@ -324,16 +324,16 @@ def compute_stats(records, service_types=SERVICE_TYPES):
 def dashboard():
     header()
 
-    # 1. Today's Operating Zone and Route Context
     zone_day = get_today_operating_zone(address_df)
     # Today's Zone
     st.markdown("### Today's Zone")
     st.markdown(f"<span style='color:#FF8C8C;font-size:1.3em'>{zone_day}</span>", unsafe_allow_html=True)
 
     # Weekly Yardwaste Zone
+    yw_route = get_yw_zone_color()
+    color_code = "#3980ec" if yw_route == "140" else "#EAC100"
     st.markdown("### Weekly Yardwaste Zone")
     st.markdown(f"<span style='color:{color_code};font-weight:bold;font-size:1.3em'>{yw_route}</span>", unsafe_allow_html=True)
-
 
     # 2. Route Counts by Service Type
     st.markdown("#### Route Counts by Service")
