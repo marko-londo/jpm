@@ -602,7 +602,7 @@ def dashboard():
     with st.expander("All Misses by Route", expanded=False):
         plot_route_bar(get_all_time_records_cached(), "All Missed Stops by Route")
     with st.expander("All Misses Over Time by Service", expanded=True):
-        plot_all_time_area(get_all_time_records())
+        plot_all_time_lines(get_all_time_records())
     st.divider()
 
 def hotlist():
