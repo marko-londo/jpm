@@ -155,15 +155,15 @@ def get_yw_zone_color(today=None):
     first_monday = june_first + datetime.timedelta(days=(0 - june_first.weekday() + 7) % 7)
     weeks_since = (today - first_monday).days // 7
     if weeks_since % 2 == 0:
-        return "140", "Blue"
+        return "140", "Blue Zone"
     else:
-        return "141", "Yellow"
+        return "141", "Yellow Zone"
 
 def dashboard():
     header()
     # 1. Operating zone
     zone_day = get_today_operating_zone(address_df)
-    st.markdown(f"##<span style='color:#FF8C8C;'>{zone_day}</span>", unsafe_allow_html=True)
+    st.markdown(f"### <span style='color:#FF8C8C;'>{zone_day} Zone</span>", unsafe_allow_html=True)
 
     # 2. YW (Yardwaste) zone color this week
     yw_route, yw_color = get_yw_zone_color()
