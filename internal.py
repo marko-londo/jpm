@@ -637,10 +637,9 @@ def dashboard():
         plot_route_bar(get_all_time_records_cached(), "All Missed Stops by Route")
     with st.expander("All Misses Over Time by Service", expanded=False):
         plot_all_time_lines(get_all_time_records())
-    st.divider()
     with st.expander("Total Missed Stops Over Time", expanded=False):
         plot_all_time_total_line(get_all_time_records())
-
+    st.divider()
 
 def hotlist():
     st.write("Hotlist")
