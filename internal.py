@@ -386,13 +386,23 @@ def dashboard():
             table.append({
                 "Service": label,
                 "Submitted": s["total_misses"],
-                "Legitimate": s["legit_misses"],
-                "Illegitimate": s["illegit_misses"],
                 "Resolved": s["resolved"],
                 "% Resolved": f"{s['pct_resolved']:.1f}%",
+                "Legitimate": s["legit_misses"],
+                "Illegitimate": s["illegit_misses"],
                 "% Legitimate": f"{s['pct_legit']:.1f}%"
             })
-        st.dataframe(pd.DataFrame(table), hide_index=True, use_container_width=True)
+        columns_order = [
+            "Service",
+            "Submitted",
+            "Resolved",
+            "% Resolved",
+            "Legitimate",
+            "Illegitimate",
+            "% Legitimate"
+        ]
+        st.dataframe(pd.DataFrame(table)[columns_order], hide_index=True, use_container_width=True)
+
 
     stats_table(today_stats, "Today's Missed Stops")
     stats_table(yesterday_stats, "Yesterday's Missed Stops")
