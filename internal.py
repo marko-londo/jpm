@@ -329,10 +329,10 @@ def dashboard():
     st.markdown("### Today's Zone")
     st.markdown(f"<span style='color:#FF8C8C;font-size:1.3em'>{zone_day}</span>", unsafe_allow_html=True)
 
-    # Weekly Yardwaste Zone
+    # Weekly Yard Waste Zone
     yw_route = get_yw_zone_color()
     color_code = "#3980ec" if yw_route == "140" else "#EAC100"
-    st.markdown("### Weekly Yardwaste Zone")
+    st.markdown("### Weekly Yard Waste Zone")
     st.markdown(f"<span style='color:{color_code};font-weight:bold;font-size:1.3em'>{yw_route}</span>", unsafe_allow_html=True)
 
     # 2. Route Counts by Service Type
