@@ -267,6 +267,45 @@ def get_month_records():
     ]
     return filtered
 
+def plot_service_donut(records, title):
+    # Count misses by Service Type
+    df = pd.DataFrame(records)
+    if df.empty or "Service Type" not in df.columns:
+        st.info(f"No data for {title}")
+        return
+    counts = df["Service Type"].value_counts().reset_index()
+    counts.columns = ["Service", "Misses"]
+    fig = px.pie(
+        counts,
+        values="Misses",
+        names="Service",
+        title=title,
+        hole=0.45
+    )
+    fig.update_traces(textinfo="percent+label", marker=dict(line=dict(color='#fff', width=2)))
+    fig.update_layout(showlegend=True, template="plotly_white")
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_route_bar(records, title):
+    df = pd.DataFrame(records)
+    if df.empty or "Route" not in df.columns:
+        st.info(f"No route data for {title}")
+        return
+    route_counts = df["Route"].value_counts().reset_index()
+    route_counts.columns = ["Route", "Misses"]
+    fig = px.bar(
+        route_counts.sort_values("Misses", ascending=False).head(15),  # top 15
+        x="Misses",
+        y="Route",
+        orientation="h",
+        title=title,
+        text="Misses"
+    )
+    fig.update_layout(template="plotly_white", yaxis=dict(autorange="reversed"), height=400)
+    fig.update_traces(textposition='outside')
+    st.plotly_chart(fig, use_container_width=True)
+
+
 # --- CACHED SHEETS READS ---
 
 @st.cache_data(ttl=300)  # 5 minutes; adjust as needed
@@ -405,6 +444,10 @@ def dashboard():
 
 
     stats_table(today_stats, "Today's Missed Stops")
+    with st.expander("Today's Misses by Service", expanded=True):
+        plot_service_donut(get_tab_records_cached("today"), "Today's Missed Stops by Service")
+    with st.expander("Today's Misses by Route", expanded=False):
+        plot_route_bar(get_tab_records_cached("today"), "Today's Missed Stops by Route")    
     stats_table(yesterday_stats, "Yesterday's Missed Stops")
     stats_table(week_stats, "This Week's Missed Stops")
     stats_table(month_stats, "This Month's Missed Stops")
