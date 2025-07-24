@@ -509,6 +509,7 @@ def dashboard():
         plot_service_donut(get_tab_records_cached("today"), "Today's Missed Stops by Service")
     with st.expander("Today's Misses by Route", expanded=False):
         plot_route_bar(get_tab_records_cached("today"), "Today's Missed Stops by Route")
+    st.divider()
 
     # Yesterday's stats/charts
     stats_table(yesterday_stats, "Yesterday's Missed Stops")
@@ -516,6 +517,7 @@ def dashboard():
         plot_service_donut(get_tab_records_cached("yesterday"), "Yesterday's Missed Stops by Service")
     with st.expander("Yesterday's Misses by Route", expanded=False):
         plot_route_bar(get_tab_records_cached("yesterday"), "Yesterday's Missed Stops by Route")
+    st.divider()
 
     # This Week's stats/charts
     stats_table(week_stats, "This Week's Missed Stops")
@@ -523,6 +525,7 @@ def dashboard():
         plot_service_donut(get_week_records_cached(), "This Week's Missed Stops by Service")
     with st.expander("This Week's Misses by Route", expanded=False):
         plot_route_bar(get_week_records_cached(), "This Week's Missed Stops by Route")
+    st.divider()
 
     # This Month's stats/charts
     stats_table(month_stats, "This Month's Missed Stops")
@@ -530,7 +533,6 @@ def dashboard():
         plot_service_donut(get_month_records_cached(), "This Month's Missed Stops by Service")
     with st.expander("This Month's Misses by Route", expanded=False):
         plot_route_bar(get_month_records_cached(), "This Month's Missed Stops by Route")
-
     st.divider()
 
 def hotlist():
