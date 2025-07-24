@@ -160,9 +160,10 @@ def get_yw_zone_color(today=None):
         return "141", "Yellow"
 
 def dashboard():
+    header()
     # 1. Operating zone
     zone_day = get_today_operating_zone(address_df)
-    st.markdown(f"<span style='color:#FF8C8C;'>{zone_day}</span>", unsafe_allow_html=True)
+    st.markdown(f"##<span style='color:#FF8C8C;'>{zone_day}</span>", unsafe_allow_html=True)
 
     # 2. YW (Yardwaste) zone color this week
     yw_route, yw_color = get_yw_zone_color()
@@ -210,7 +211,6 @@ def ops(name, user_role):
         testing()
 
 name, username, user_role = user_login(authenticator, credentials)
-header()
 if user_role == "jpm":
     ops(name, user_role)
 
