@@ -324,6 +324,7 @@ def compute_stats(records, service_types=SERVICE_TYPES):
 def dashboard():
     header()
 
+    # 1. Today's Operating Zone and Route Context
     # Today's Zone
     st.markdown("### Today's Zone")
     st.markdown(f"<span style='color:#FF8C8C;font-size:1.3em'>{zone_day}</span>", unsafe_allow_html=True)
