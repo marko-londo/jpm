@@ -321,21 +321,32 @@ def plot_route_bar(records, title):
         return
     df["Route"] = df["Route"].astype(str)
     df["ServiceType"] = df["Route"].apply(decode_service_from_route)
-    # Count total misses per route (regardless of service type)
+    # Count misses per route (only), ignore service grouping
     route_counts = (
-        df.groupby("Route")
-        .size()
-        .reset_index(name="Misses")
-        .sort_values("Misses", ascending=False)
-        .head(15)
+        df.groupby(["Route", "ServiceType"]).size().reset_index(name="Misses")
     )
-    # Add ServiceType column for color (use first occurrence)
-    route_counts["ServiceType"] = route_counts["Route"].apply(
-        lambda x: df[df["Route"] == x]["ServiceType"].iloc[0]
+    # Get only top 15 routes (by total misses, not by type)
+    top_routes = (
+        route_counts.groupby("Route")["Misses"].sum().nlargest(15).index.tolist()
     )
+    route_counts = route_counts[route_counts["Route"].isin(top_routes)]
+    # For each route, keep only the dominant service type (most common for that route)
+    dominant_types = (
+        df.groupby("Route")["ServiceType"].agg(lambda x: x.value_counts().index[0]).to_dict()
+    )
+    # Use only one row per route (aggregate all misses)
+    agg_route_counts = (
+        df[df["Route"].isin(top_routes)]
+        .groupby("Route")
+        .agg(Misses=("Route", "count"))
+        .reset_index()
+    )
+    agg_route_counts["ServiceType"] = agg_route_counts["Route"].map(dominant_types)
+    agg_route_counts = agg_route_counts.sort_values("Misses", ascending=False)
+
     color_map = {"MSW": "#57B560", "SS": "#4FC3F7", "YW": "#F6C244"}
     fig = px.bar(
-        route_counts,
+        agg_route_counts,
         x="Misses",
         y="Route",
         orientation="h",
@@ -348,7 +359,7 @@ def plot_route_bar(records, title):
         template="plotly_white",
         yaxis=dict(autorange="reversed"),
         height=400,
-        showlegend=False  # No legend
+        showlegend=False  # Hide legend
     )
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
