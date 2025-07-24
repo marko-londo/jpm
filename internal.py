@@ -178,9 +178,8 @@ def dashboard():
         ("SS Routes",  "SS Zone",  "SS Route", "#4FC3F7"),    # Light blue
         ("YW Routes",  "YW Zone",  "YW Route", "#F6C244"),    # Mustard/yellow
     ]
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns([1,1,1], gap="small")
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
-        # Filter addresses where the zone for this service == today's operating zone
         valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
         if "YW" in label:
             valid = valid[valid["YW Route"].astype(str).str.contains(yw_route, na=False)]
@@ -188,10 +187,21 @@ def dashboard():
         count = len(routes)
         with [col1, col2, col3][i]:
             st.markdown(
-                f"<div style='background-color:{color};padding:18px 0;border-radius:10px;text-align:center;'>"
-                f"<span style='font-weight:bold;font-size:1.6em;'>{count}</span><br>"
-                f"<span style='font-size:1.1em'>{label}</span></div>", unsafe_allow_html=True
+                f"""
+                <div style='background-color:{color};
+                            padding:10px 0 6px 0;
+                            border-radius:10px;
+                            text-align:center;
+                            min-width:80px;
+                            min-height:60px;
+                            margin:0 auto;
+                            box-shadow:0 1px 6px #2222;'>
+                  <span style='font-weight:700;font-size:1.15em;'>{count}</span><br>
+                  <span style='font-size:0.95em'>{label}</span>
+                </div>
+                """, unsafe_allow_html=True
             )
+
         
 
 
