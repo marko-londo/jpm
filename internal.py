@@ -122,7 +122,7 @@ def testing():
 
 def ops(name, user_role):
     st.sidebar.subheader("Operations")
-    op_select = st.sidebar.radio(["Dashboard", "Hotlist", "Testing"])
+    op_select = st.sidebar.radio("Select Operation:", ["Dashboard", "Hotlist", "Testing"])
     if op_select == "Dashboard":
         dashboard()
     elif op_select == "Hotlist":
