@@ -456,15 +456,34 @@ def dashboard():
         st.dataframe(pd.DataFrame(table)[columns_order], hide_index=True, use_container_width=True)
 
 
+    # Today's stats/charts
     stats_table(today_stats, "Today's Missed Stops")
     with st.expander("Today's Misses by Service", expanded=False):
         plot_service_donut(get_tab_records_cached("today"), "Today's Missed Stops by Service")
     with st.expander("Today's Misses by Route", expanded=False):
-        plot_route_bar(get_tab_records_cached("today"), "Today's Missed Stops by Route")    
+        plot_route_bar(get_tab_records_cached("today"), "Today's Missed Stops by Route")
 
+    # Yesterday's stats/charts
     stats_table(yesterday_stats, "Yesterday's Missed Stops")
+    with st.expander("Yesterday's Misses by Service", expanded=False):
+        plot_service_donut(get_tab_records_cached("yesterday"), "Yesterday's Missed Stops by Service")
+    with st.expander("Yesterday's Misses by Route", expanded=False):
+        plot_route_bar(get_tab_records_cached("yesterday"), "Yesterday's Missed Stops by Route")
+
+    # This Week's stats/charts
     stats_table(week_stats, "This Week's Missed Stops")
+    with st.expander("This Week's Misses by Service", expanded=False):
+        plot_service_donut(get_week_records_cached(), "This Week's Missed Stops by Service")
+    with st.expander("This Week's Misses by Route", expanded=False):
+        plot_route_bar(get_week_records_cached(), "This Week's Missed Stops by Route")
+
+    # This Month's stats/charts
     stats_table(month_stats, "This Month's Missed Stops")
+    with st.expander("This Month's Misses by Service", expanded=False):
+        plot_service_donut(get_month_records_cached(), "This Month's Missed Stops by Service")
+    with st.expander("This Month's Misses by Route", expanded=False):
+        plot_route_bar(get_month_records_cached(), "This Month's Missed Stops by Route")
+
     st.divider()
 
 def hotlist():
