@@ -363,7 +363,7 @@ def plot_route_bar(records, title):
     fig.update_traces(textposition='outside')
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_all_time_area(records, title="All Time Misses Over Time by Service Type"):
+def plot_all_time_area(records, title="Historical Missed Stops by Service Type"):
     df = pd.DataFrame(records)
     # Ensure correct columns
     if df.empty or "Date" not in df.columns or "Service Type" not in df.columns:
@@ -594,7 +594,7 @@ def dashboard():
         plot_service_donut(get_all_time_records_cached(), "All Time Missed Stops by Service")
     with st.expander("All Time Misses by Route", expanded=False):
         plot_route_bar(get_all_time_records_cached(), "All Time Missed Stops by Route")
-    with st.expander("All Time Misses Over Time", expanded=True):
+    with st.expander("All Misses Over Time", expanded=True):
         plot_all_time_area(get_all_time_records())
     st.divider()
 
