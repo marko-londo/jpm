@@ -500,7 +500,7 @@ def dashboard():
             "Illegitimate",
             "% Legitimate"
         ]
-        st.dataframe(pd.DataFrame(table)[columns_order], hide_index=True, use_container_width=True)
+        st.table(pd.DataFrame(table)[columns_order])
 
 
     # Today's stats/charts
