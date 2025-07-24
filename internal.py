@@ -182,9 +182,12 @@ def dashboard():
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
         # Filter addresses where the zone for this service == today's operating zone
         valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
-        # For YW, also filter by zone color
         if "YW" in label:
-            valid = valid[valid["YW Route"].astype(str) == yw_route]
+            # Debug: See what unique values exist in YW Route
+            st.write("Debug: Unique YW Route values in today's zone:", valid["YW Route"].unique())
+            # Use .str.contains for flexibility (handles '140', '141', 'Zone 140', etc.)
+            valid = valid[valid["YW Route"].astype(str).str.contains(yw_route, na=False)]
+            st.write(f"Debug: YW Route '{yw_route}' filtered count:", len(valid))
         routes = valid[route_col].unique()
         count = len(routes)
         with [col1, col2, col3][i]:
