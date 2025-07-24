@@ -73,7 +73,7 @@ def user_login(authenticator, credentials):
     authenticator.logout("Logout", "sidebar")
     return name, username, user_role
 
-def home():
+def header():
     st.markdown(
         f"""
         <div style='display: flex; justify-content: center; align-items: center; margin-bottom: 12px;'>
@@ -121,5 +121,6 @@ def ops():
     elif op_select == "Testing":
         testing()
 
-home()
+name, username, user_role = user_login(authenticator, credentials)
+header()
 
