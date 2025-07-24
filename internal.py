@@ -184,13 +184,7 @@ def dashboard():
         valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
         # For YW, also filter by zone color
         if label == "YW":
-            day_idx = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].index(zone_day) + 1
-            expected_route = f"{day_idx}{yw_route[-2:]}"  # e.g., "1140"
-            valid = valid[valid["YW Route"].astype(str) == expected_route]
-            st.write("YW Route Numbers Being Counted:", valid["YW Route"].unique())
-            st.write("Sample Valid Rows:", valid.head())
-
-
+            valid = valid[valid["YW Route"].astype(str).str.endswith(yw_route)]
         routes = valid[route_col].unique()
         count = len(routes)
         with [col1, col2, col3][i]:
