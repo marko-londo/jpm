@@ -57,11 +57,12 @@ st.set_page_config(
 
 st.logo(image=sidebar_logo)
 
-@st.cache_data(ttl=1800)  # Cache for 30 minutes; adjust as needed
-def load_address_df(gs_client, sheet_url):
-    ws = gs_client.open_by_url(sheet_url).sheet1
+@st.cache_data(ttl=1800)
+def load_address_df(_gs_client, sheet_url):
+    ws = _gs_client.open_by_url(sheet_url).sheet1
     df = pd.DataFrame(ws.get_all_records())
     return df
+
 
 with st.spinner("Loading address data..."):
     address_df = load_address_df(gs_client, ADDRESS_LIST_SHEET_URL)
@@ -215,8 +216,6 @@ def ops(name, user_role):
         hotlist()
     elif op_select == "Testing":
         testing()
-
-addresses = gs_client.open_by_url(ADDRESS_LIST_SHEET_URL)
 
 name, username, user_role = user_login(authenticator, credentials)
 header()
