@@ -541,7 +541,8 @@ def dashboard():
         
         # For YW, apply an ADDITIONAL filter for the weekly color zone
         if "YW" in label:
-            valid_df = valid_df[valid_df['YW Zone Color'].astype(str) == yw_route]
+            valid_df = valid_df[valid_df[route_col].astype(str).str[-3:] == yw_route]
+
             
             # --- START DEBUG BLOCK ---
             st.warning("Yard Waste Debug Information", icon="⚠️")
