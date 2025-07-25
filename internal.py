@@ -524,10 +524,10 @@ def dashboard():
     st.markdown(f"<span style='color:#FF8C8C;font-size:1.3em'>{zone_day}</span>", unsafe_allow_html=True)
 
     # Weekly Yard Waste Zone
-    yw_route = get_yw_zone_color()
-    color_code = "#3980ec" if yw_route == "140" else "#EAC100"
+    weekly_yw_color = get_yw_zone_color() # This correctly returns "Blue" or "Yellow"
+    html_color_code = "#3980ec" if weekly_yw_color == "Blue" else "#EAC100"
     st.markdown("### Weekly Yard Waste Zone")
-    st.markdown(f"<span style='color:{color_code};font-weight:bold;font-size:1.3em'>{yw_route}</span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='color:{html_color_code};font-weight:bold;font-size:1.3em'>{weekly_yw_color}</span>", unsafe_allow_html=True)
 
     # 2. Route Counts by Service Type
     st.markdown("#### Route Counts by Service")
@@ -538,14 +538,16 @@ def dashboard():
     ]
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
-            # First, filter by the daily operating zone for all services
-            valid_df = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
             
-            # For YW, apply an ADDITIONAL filter for the weekly color zone
             if "YW" in label:
-                valid_df = valid_df[valid_df['YW Zone Color'].astype(str) == yw_route]
-                
-            # Now count the unique routes from the correctly filtered dataframe
+                # For YW, BOTH conditions must be true: the day AND the color must match.
+                is_correct_day = address_df[zone_col].astype(str).str.lower() == zone_day.lower()
+                is_correct_color = address_df['YW Zone Color'].astype(str) == weekly_yw_color
+                valid_df = address_df[is_correct_day & is_correct_color]
+            else:
+                # For MSW and SS, only the day filter applies.
+                valid_df = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
+
             routes = valid_df[route_col].unique()
             count = len(routes)
             label_display = label.replace("Routes", "Route" if count == 1 else "Routes")
