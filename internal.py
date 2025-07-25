@@ -536,10 +536,13 @@ def dashboard():
     ]
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
-        valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]   
-    if "YW" in label:
-        valid = address_df[address_df['YW Zone'].astype(str).str.lower() == zone_day.lower()]
-        valid = valid[valid['YW Zone Color'].astype(str) == yw_route]
+        valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
+        # +++ CORRECTED BLOCK +++
+        if "YW" in label:
+            # First, filter by the operating day (e.g., 'Thursday')
+            valid = address_df[address_df['YW Zone'].astype(str).str.lower() == zone_day.lower()]
+            # Then, further filter that result by the correct weekly color zone
+            valid = valid[valid['YW Zone Color'].astype(str) == yw_route]
         routes = valid[route_col].unique()
         count = len(routes)
         label_display = label.replace("Routes", "Route" if count == 1 else "Routes")
