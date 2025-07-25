@@ -169,9 +169,11 @@ def get_yw_zone_color(today=None):
         today = TODAY
     year = today.year
     june_first = datetime.date(year, 6, 1)
+    # Find the first Monday in or after June 1st
     first_monday = june_first + datetime.timedelta(days=(0 - june_first.weekday() + 7) % 7)
     weeks_since = (today - first_monday).days // 7
-    return "140" if weeks_since % 2 == 0 else "141"
+    # Return "Blue" or "Yellow" to match the data in the spreadsheet
+    return "Blue" if weeks_since % 2 == 0 else "Yellow"
 
 def get_tab_date(day="today"):
     # Returns correct date for today/yesterday logic
