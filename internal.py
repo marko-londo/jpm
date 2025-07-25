@@ -536,9 +536,28 @@ def dashboard():
     ]
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
+        # First, filter by the daily operating zone for all services
         valid_df = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
+        
+        # For YW, apply an ADDITIONAL filter for the weekly color zone
         if "YW" in label:
             valid_df = valid_df[valid_df[route_col].astype(str).str[-3:] == yw_route]
+
+            
+            # --- START DEBUG BLOCK ---
+            st.warning("Yard Waste Debug Information", icon="⚠️")
+            st.write(f"Filtering for Zone Day: `{zone_day}`")
+            st.write(f"Filtering for Zone Color: `{yw_route}`")
+            st.write("Resulting DataFrame (`valid_df`):")
+            st.dataframe(valid_df[['YW Route', 'YW Zone', 'YW Zone Color', 'Address']]) # Showing only relevant columns
+
+            unique_routes_found = valid_df[route_col].unique()
+            st.write("Unique YW Routes Found in this DataFrame:")
+            st.write(unique_routes_found) 
+            st.divider()
+            # --- END DEBUG BLOCK ---
+            
+        # Now count the unique routes from the correctly filtered dataframe
         routes = valid_df[route_col].unique()
         count = len(routes)
         label_display = label.replace("Routes", "Route" if count == 1 else "Routes")
