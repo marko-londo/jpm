@@ -169,11 +169,9 @@ def get_yw_zone_color(today=None):
         today = TODAY
     year = today.year
     june_first = datetime.date(year, 6, 1)
-    # Find the first Monday in or after June 1st
     first_monday = june_first + datetime.timedelta(days=(0 - june_first.weekday() + 7) % 7)
     weeks_since = (today - first_monday).days // 7
-    # Return "Blue" or "Yellow" to match the data in the spreadsheet
-    return "Blue" if weeks_since % 2 == 0 else "Yellow"
+    return "140" if weeks_since % 2 == 0 else "141"
 
 def get_tab_date(day="today"):
     # Returns correct date for today/yesterday logic
@@ -538,34 +536,32 @@ def dashboard():
     ]
     col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
     for i, (label, zone_col, route_col, color) in enumerate(service_info):
-            # First, filter by the daily operating zone for all services
-            valid_df = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
-            
-            # For YW, apply an ADDITIONAL filter for the weekly color zone
-            if "YW" in label:
-                valid_df = valid_df[valid_df['YW Zone Color'].astype(str) == yw_route]
-                
-            # Now count the unique routes from the correctly filtered dataframe
-            routes = valid_df[route_col].unique()
-            count = len(routes)
-            label_display = label.replace("Routes", "Route" if count == 1 else "Routes")
-            
-            with [col1, col2, col3][i]:
-                st.markdown(
-                    f"""
-                    <div style='background-color:{color};
-                                padding:10px 0 6px 0;
-                                border-radius:10px;
-                                text-align:center;
-                                min-width:80px;
-                                min-height:60px;
-                                margin:0 auto;
-                                box-shadow:0 1px 6px #2222;'>
-                    <span style='font-weight:700;font-size:1.15em;'>{count}</span><br>
-                    <span style='font-size:0.95em'>{label_display}</span>
-                    </div>
-                    """, unsafe_allow_html=True
-                )
+        valid = address_df[address_df[zone_col].astype(str).str.lower() == zone_day.lower()]
+        # +++ CORRECTED BLOCK +++
+        if "YW" in label:
+            # First, filter by the operating day (e.g., 'Thursday')
+            valid = address_df[address_df['YW Zone'].astype(str).str.lower() == zone_day.lower()]
+            # Then, further filter that result by the correct weekly color zone
+            valid = valid[valid['YW Zone Color'].astype(str) == yw_route]
+        routes = valid[route_col].unique()
+        count = len(routes)
+        label_display = label.replace("Routes", "Route" if count == 1 else "Routes")
+        with [col1, col2, col3][i]:
+            st.markdown(
+                f"""
+                <div style='background-color:{color};
+                            padding:10px 0 6px 0;
+                            border-radius:10px;
+                            text-align:center;
+                            min-width:80px;
+                            min-height:60px;
+                            margin:0 auto;
+                            box-shadow:0 1px 6px #2222;'>
+                <span style='font-weight:700;font-size:1.15em;'>{count}</span><br>
+                <span style='font-size:0.95em'>{label_display}</span>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
     st.divider()
 
